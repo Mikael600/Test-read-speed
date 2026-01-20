@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Läshastighet – 1 minut</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f8fafc; margin: 0; padding: 16px; }
+    h1 { text-align: center; }
+    .container { max-width: 600px; margin: auto; }
+    .timer { font-size: 36px; text-align: center; margin: 16px 0; }
+    .list { display: flex; flex-direction: column; gap: 6px; }
+    button.word {
+      text-align: left;
+      padding: 10px;
+      font-size: 22px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      background: white;
+    }
+    button.selected { background: #bbf7d0; }
+    button.start {
+      font-size: 20px;
+      padding: 14px 22px;
+      border-radius: 14px;
+      background: #16a34a;
+      color: white;
+      border: none;
+    }
+    .center { text-align: center; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    // Åk 4 – prototypisk ordpool (~300 ord), vardagsnära och skolnära
+    const WORD_POOL = [
+      "jag","du","hon","han","vi","de","min","din","sin","vår","är","har","kan","vill","ska","går","kommer","ser","hör","säger",
+      "tänker","vet","gör","får","nu","här","där","alltid","ibland","aldrig","snart","idag","igår","imorgon","stor","liten","lång",
+      "kort","snabb","långsam","tung","lätt","varm","kall","glad","ledsen","arg","snäll","rädd","modig","stark","svag","trygg",
+      "dag","natt","morgon","kväll","vecka","år","hem","hus","rum","dörr","fönster","bord","stol","säng","kök","hall","skola",
+      "klass","lärare","elev","bok","text","ord","bild","penna","papper","läsa","skriva","räkna","leka","springa","hoppa","kasta",
+      "fånga","spela","boll","plan","lag","vinst","förlust","mat","bröd","smör","mjölk","vatten","frukt","äpple","banan","päron",
+      "tallrik","glas","sked","sol","regn","vind","snö","moln","himmel","mark","träd","blomma","gräs","skog","sjö","strand","djur",
+      "hund","katt","fågel","fisk","häst","vän","familj","mamma","pappa","syskon","kompis","rast","lektion","fråga","svara","förstå",
+      "lära","hjälpa","dela","vänta","börja","sluta","prova","klara","öva","lyckas","dröm","hopp","saga","resa","karta","spår","äventyr",
+      "skapa","rita","måla","sjunga","dansa","bygga","hitta","tappa","laga","visa","dölja","idé","plan","minne","tanke","känsla",
+      "glädje","oro","lugn","trygghet","regel","val","tur","chans","risk","mål","start","paus","fortsätta","stanna","upp","ner","inne",
+      "ute","fram","bak","över","under","mellan","nära","långt","först","sist","redan","plötsligt","tyst","högt","sakta","fort",
+      "rakt","snett","runt","kant","hörn","mitt","sida","färg","form","rand","prick","ruta","linje","punkt","cirkel","fyrkant",
+      "triangel","mönster","ordning","del","helhet","tid","sekund","minut","timme","helg","lov","plats","gata","park","affär","kiosk",
+      "bibliotek","simhall","lekpark","buss","cykel","hjälm","väska","ficka","nyckel","knapp","dragkedja","mössa","vante","stövel",
+      "jacka","skor","snöre","ryggsäck","flaska","termos","klocka","kalender","schema","uppgift","exempel","förklaring","resultat"
+    ];
+
+    function shuffle(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function generateWordList(pool, count = 150) {
+      if (pool.length < count) {
+        throw new Error("Ordpoolen är för liten");
+      }
+      return shuffle(pool).slice(0, count);
+    }
+
+    function App() {
+      const [timeLeft, setTimeLeft] = React.useState(60);
+      const [running, setRunning] = React.useState(false);
+      const [finished, setFinished] = React.useState(false);
+      const [result, setResult] = React.useState(null);
+      const [words, setWords] = React.useState([]);
+
+      React.useEffect(() => {
+        if (!running) return;
+        if (timeLeft === 0) {
+          setRunning(false);
+          setFinished(true);
+          return;
+        }
+        const t = setTimeout(() => setTimeLeft(v => v - 1), 1000);
+        return () => clearTimeout(t);
+      }, [running, timeLeft]);
+
+      function start() {
+        setWords(generateWordList(WORD_POOL, 150));
+        setTimeLeft(60);
+        setFinished(false);
+        setResult(null);
+        setRunning(true);
+      }
+
+      return (
+        <div className="container">
+          <h1>Läshastighet – 1 minut (åk 4)</h1>
+
+          {!running && !finished && (
+            <div className="center">
+              <p>Tryck start och läs så många ord du kan på 1 minut.</p>
+              <button className="start" onClick={start}>Start</button>
+            </div>
+          )}
+
+          {running && <div className="timer">{timeLeft}s</div>}
+
+          {(running || finished) && (
+            <div className="list">
+              {words.map((w, i) => (
+                <button
+                  key={i}
+                  className={"word " + (result === i + 1 ? "selected" : "")}
+                  disabled={!finished}
+                  onClick={() => setResult(i + 1)}
+                >
+                  {i + 1}. {w}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {finished && (
+            <div className="center">
+              <h2>Resultat: {result ?? "-"} ord</h2>
+              <button className="start" onClick={start}>Nytt försök</button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
